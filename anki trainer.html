@@ -178,7 +178,7 @@
         const streak = successStreak[card.phrase] || 0;
         if (streak >= 3) return false;
         const lastTime = lastViewed[card.phrase];
-        const waitTime = streak === 2 ? 20 * 1000 : 10 * 1000;
+        const waitTime = streak === 2 ? 3 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
         return !lastTime || now - lastTime > waitTime;
       });
 
@@ -232,7 +232,7 @@
     const lastTime = lastViewed[card.phrase];
     const streak = successStreak[card.phrase] || 0;
     if (streak >= 3) return false;
-    const waitTime = streak === 2 ? 40 * 1000 : 10 * 1000;
+    const waitTime = streak === 2 ? 3 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
     return !lastTime || now - lastTime > waitTime;
   });
 
