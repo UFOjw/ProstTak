@@ -25,7 +25,7 @@ It has the following options:
 6. Existing words couldn't be added.
 7. When you 'work' with a word, it enters a moratorium period during which it won’t appear in the next scheduled repetition. The moratorium durations are: 1st/2nd/3rd time – 24/24/72 hours respectively
 
-I use for adding words to the next prompt for LLM:
+I use the following prompt for adding words (for LLM):
 
 ```
 You are an English language assistant helping users expand their vocabulary.
