@@ -67,43 +67,69 @@
             </svg>
           </button>          
 
-          <button
-            id="toggleFormBtn"
-            class="mb-4 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded"
-          >
-            Show Add Cards Form
-          </button>
-      
-          <div id="formContainer" class="hidden">
-            <h1 class="text-2xl font-bold mb-4">Add Your Cards</h1>
-            <textarea
-              id="jsonInput"
-              rows="10"
-              class="w-full border border-gray-300 rounded p-2 mb-4 text-sm"
-              placeholder='Paste JSON data here...'
-            ></textarea>
+          <div class="relative mb-8">
             <button
-              id="loadBtn"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+              id="toggleFormBtn"
+              class="bg-neutral-700 hover:bg-neutral-800 text-white px-4 py-2 rounded shadow transition min-w-[200px] text-center mx-auto block"
             >
-              Load Cards
-            </button>
+              Show Add Cards Form
+            </button>            
+          
+            <div id="formContainer" class="hidden mt-6">
+              <h1 class="text-2xl font-bold mb-4">Add Your Cards</h1>
+              <textarea
+                id="jsonInput"
+                rows="10"
+                class="w-full border border-gray-300 rounded p-2 mb-4 text-sm"
+                placeholder='Paste JSON data here...'
+              ></textarea>
+          
+              <div class="flex flex-col sm:flex-row justify-center items-center gap-3 mt-2">
+                <button
+                  id="loadBtn"
+                  class="bg-indigo-700 hover:bg-indigo-800 text-white text-sm font-semibold py-2 px-5 rounded-md shadow-sm transition"
+                >
+                  🃏 Load Cards
+                </button>
+          
+                <button
+                  id="exportBtn"
+                  class="bg-sky-700 hover:bg-sky-800 text-white text-sm font-semibold py-2 px-5 rounded-md shadow-sm transition"
+                >
+                  📤 Export
+                </button>
+          
+                <button
+                  id="importBtn"
+                  class="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold py-2 px-5 rounded-md shadow-sm transition"
+                >
+                  📥 Import
+                </button>
+              </div>
+          
+              <div id="syncResult" class="text-sm text-center mt-3 text-gray-700"></div>
+            </div>
           </div>
+          
       
           <div id="cardArea" class="mt-10 hidden">
             <h2 class="text-xl font-semibold mb-4">Anki-Like Single Card</h2>
             <div class="bg-white shadow rounded-lg p-6 flex flex-col items-center justify-center min-h-[150px]">
               <p id="cardPhrase" class="text-lg font-bold text-center">Loading...</p>
-              <button id="showDetailsBtn" class="invisible hidden mt-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded shadow transition-opacity transition-transform duration-300">
+              <button id="showDetailsBtn" class="invisible hidden mt-4 bg-neutral-700 hover:bg-neutral-800 text-white text-sm px-4 py-2 rounded shadow transition-opacity transition-transform duration-300">
                 Show Details
-              </button>
+              </button>              
               <ul id="cardMeanings" class="mt-4 text-left text-sm text-gray-700"></ul>
             </div>
             
       
             <div class="mt-4 space-x-4">
-              <button id="rememberBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">I Remember</button>
-              <button id="dontRememberBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">I Don't Remember</button>
+              <button id="rememberBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-4 rounded">
+                I Remember
+              </button>              
+              <button id="dontRememberBtn" class="bg-rose-700 hover:bg-rose-800 text-white font-semibold py-2 px-4 rounded">
+                I Don't Remember
+              </button>              
             </div>
       
             <p class="text-sm mt-4" id="cardCounter">Card 0 of 0</p>
@@ -128,13 +154,19 @@
             <button id="closeMenuBtn" class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
           </div>
           <div class="space-y-4">
-            <button id="showWordsListBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded">📚 Show All Words</button>
+            <button
+            id="showWordsListBtn"
+            class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-2 px-4 rounded shadow transition"
+          >
+            📚 Show All Words
+          </button>          
           </div>
           <div id="wordListContainer" class="mt-6 max-h-[70vh] overflow-y-auto space-y-2 text-sm"></div>
         </div>
         
         <div id="toastContainer" class="fixed top-4 right-4 space-y-2 z-50"></div>
 
+        
   <script>
     const loadBtn = document.getElementById("loadBtn");
     const input = document.getElementById("jsonInput");
@@ -178,7 +210,7 @@
         const streak = successStreak[card.phrase] || 0;
         if (streak >= 3) return false;
         const lastTime = lastViewed[card.phrase];
-        const waitTime = streak === 2 ? 3 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        const waitTime = streak === 2 ? 20 * 1000 : 10 * 1000;
         return !lastTime || now - lastTime > waitTime;
       });
 
@@ -232,7 +264,7 @@
     const lastTime = lastViewed[card.phrase];
     const streak = successStreak[card.phrase] || 0;
     if (streak >= 3) return false;
-    const waitTime = streak === 2 ? 3 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const waitTime = streak === 2 ? 40 * 1000 : 10 * 1000;
     return !lastTime || now - lastTime > waitTime;
   });
 
@@ -494,6 +526,59 @@ document.addEventListener("click", (e) => {
     setTimeout(() => menuSidebar.classList.add("hidden"), 300); // скрываем после анимации
   }
 });
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const allData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    allData[key] = localStorage.getItem(key);
+  }
+
+  const blob = new Blob([JSON.stringify(allData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "anki_backup.json";
+  link.click();
+
+  URL.revokeObjectURL(url);
+});
+
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+
+  input.onchange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+
+        for (const [key, value] of Object.entries(data)) {
+          localStorage.setItem(key, value);
+        }
+
+        alert("✅ Данные успешно импортированы!");
+        location.reload(); // чтобы обновились карточки
+      } catch (err) {
+        alert("❌ Ошибка при чтении файла");
+        console.error(err);
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  input.click();
+});
+
+
 
   </script>
 
