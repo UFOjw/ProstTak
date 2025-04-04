@@ -155,13 +155,21 @@
           </div>
           <div class="space-y-4">
             <button
-            id="showWordsListBtn"
-            class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-2 px-4 rounded shadow transition"
-          >
-            📚 Show All Words
-          </button>          
+              id="resetProgressBtn"
+              class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded shadow transition"
+            >
+              ♻️ Reset Training
+            </button>
+          
+            <button
+              id="showWordsListBtn"
+              class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-2 px-4 rounded shadow transition"
+            >
+              📚 Show All Words
+            </button>
           </div>
-          <div id="wordListContainer" class="mt-6 max-h-[70vh] overflow-y-auto space-y-2 text-sm"></div>
+          
+          <div id="wordListContainer" class="mt-6 max-h-[70vh] overflow-y-auto space-y-2 text-sm hidden"></div>
         </div>
         
         <div id="toastContainer" class="fixed top-4 right-4 space-y-2 z-50"></div>
@@ -210,7 +218,7 @@
         const streak = successStreak[card.phrase] || 0;
         if (streak >= 3) return false;
         const lastTime = lastViewed[card.phrase];
-        const waitTime = streak === 2 ? 20 * 1000 : 10 * 1000;
+        const waitTime = streak === 2 ? 12 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000;
         return !lastTime || now - lastTime > waitTime;
       });
 
@@ -223,13 +231,13 @@
       if (cards.length > 0) {
         showCard();
       } else {
-        phraseEl.textContent = "Done!";
+        phraseEl.innerHTML = `<span class="text-2xl font-bold text-gray-800 mt-[12px] block">Done!</span>`;
         meaningsEl.innerHTML = "";
         counterEl.textContent = `Card 0 of 0`;
         isDone = true;
       }
     } catch {
-      phraseEl.textContent = "No cards available.";
+      phraseEl.innerHTML = `<span class="text-2xl font-bold text-gray-800 mt-[12px] block">No cards available.</span>`;
       meaningsEl.innerHTML = "";
       counterEl.textContent = `Card 0 of 0`;
       isDone = true;
@@ -264,7 +272,7 @@
     const lastTime = lastViewed[card.phrase];
     const streak = successStreak[card.phrase] || 0;
     if (streak >= 3) return false;
-    const waitTime = streak === 2 ? 40 * 1000 : 10 * 1000;
+    const waitTime = streak === 2 ? 12 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000;;
     return !lastTime || now - lastTime > waitTime;
   });
 
@@ -494,27 +502,36 @@ closeMenuBtn.addEventListener("click", () => {
 
 // Показать список слов
 showWordsListBtn.addEventListener("click", () => {
+  const isVisible = !wordListContainer.classList.contains("hidden");
+
+  if (isVisible) {
+    wordListContainer.classList.add("hidden");
+    return;
+  }
+
   const allCards = JSON.parse(localStorage.getItem("anki_cards") || "[]");
   const lastViewed = JSON.parse(localStorage.getItem("anki_last_viewed") || "{}");
 
   if (allCards.length === 0) {
     wordListContainer.innerHTML = `<p class="text-gray-500">No words added yet.</p>`;
-    return;
+  } else {
+    wordListContainer.innerHTML = allCards.map(card => {
+      const lastTime = lastViewed[card.phrase];
+      const formattedDate = lastTime ? new Date(lastTime).toLocaleString() : null;
+
+      return `
+        <div class="border p-2 rounded shadow-sm bg-gray-50">
+          <p><strong>${card.phrase}</strong></p>
+          <p class="text-gray-600">${(card.meanings || []).join(", ")}</p>
+          ${formattedDate ? `<p class="text-xs text-gray-500 mt-1">Last seen: ${formattedDate}</p>` : ""}
+        </div>
+      `;
+    }).join("");
   }
 
-  wordListContainer.innerHTML = allCards.map(card => {
-    const lastTime = lastViewed[card.phrase];
-    const formattedDate = lastTime ? new Date(lastTime).toLocaleString() : null;
-
-    return `
-      <div class="border p-2 rounded shadow-sm bg-gray-50">
-        <p><strong>${card.phrase}</strong></p>
-        <p class="text-gray-600">${(card.meanings || []).join(", ")}</p>
-        ${formattedDate ? `<p class="text-xs text-gray-500 mt-1">Last seen: ${formattedDate}</p>` : ""}
-      </div>
-    `;
-  }).join("");
+  wordListContainer.classList.remove("hidden");
 });
+
 
 
 document.addEventListener("click", (e) => {
@@ -576,6 +593,20 @@ document.getElementById("importBtn").addEventListener("click", () => {
   };
 
   input.click();
+});
+
+document.getElementById("resetProgressBtn").addEventListener("click", () => {
+  const cards = JSON.parse(localStorage.getItem("anki_cards") || "[]");
+  const streaks = {};
+
+  cards.forEach(card => {
+    streaks[card.phrase] = 3;
+  });
+
+  localStorage.setItem("anki_success_streak", JSON.stringify(streaks));
+
+  showToast("✅ All words marked as completed!");
+  setTimeout(() => location.reload(), 800);
 });
 
 
