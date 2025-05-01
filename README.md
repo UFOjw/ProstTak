@@ -14,7 +14,7 @@ A lightweight, browser-based flashcard trainer inspired by Anki. It allows you t
 - **Import/Export**: Backup and restore your entire training data as JSON.
 
 <p align="center">
-  <img src="Anki-Trainer.gif" alt="Demo GIF" width="400" />
+  <img src="Anki-Trainer.gif" alt="Demo GIF" width="624" />
 </p>
 
 ## Installation
