@@ -13,6 +13,10 @@ A lightweight, browser-based flashcard trainer inspired by Anki. It allows you t
 - **Data Persistence**: Stores cards, recall streaks, and last-view timestamps in `localStorage`.
 - **Import/Export**: Backup and restore your entire training data as JSON.
 
+<p align="center">
+  <img src="Anki-Trainer.gif" alt="Demo GIF" width="400" />
+</p>
+
 ## Installation
 
 1. Clone or download this repository to your Nginx web root directory.
