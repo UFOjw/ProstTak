@@ -1,0 +1,40 @@
+/* Sidebar transitions */
+#infoSidebar, #menuSidebar {
+  transition: transform 0.3s ease-in-out;
+}
+#infoSidebar { transform: translateX(100%); }
+#menuSidebar { transform: translateX(-100%); }
+#infoSidebar.open, #menuSidebar.open { transform: translateX(0); }
+
+/* Details button appearance */
+#showDetailsBtn {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 1;
+  transform: translateY(0);
+}
+#showDetailsBtn.hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+/* Toast notifications */
+.toast {
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* Adjust content when sidebar is hidden */
+.lowered {
+  margin-top: 2.25rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
