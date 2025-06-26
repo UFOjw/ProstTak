@@ -51,7 +51,7 @@ sudo nginx -s reload
 3. Click **Load Cards** to start your session.
 4. Use **I Remember** / **I Don't Remember** to record your answers.
 5. Click **Show Details** to open the sidebar with additional card information.
-6. Open the **Menu (\u2630)** to:
+6. Open the **Menu** to:
 
    * Reset training progress
    * View the full word list
