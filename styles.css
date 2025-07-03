@@ -28,6 +28,57 @@
   margin-top: 2.25rem;
 }
 
+.arrow-btn {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0.5rem;
+  border-radius: 9999px; /* Круглая область для клика */
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.arrow-btn:hover {
+  background: #e5e7eb; /* светло-серый на hover, чтобы было видно */
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  border: 2px solid #d1d5db;   /* base gray border */
+  background: #f3f4f6;         /* base gray bg */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.icon-btn img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.icon-btn.active {
+  border: 2px solid #6366f1; /* Indigo-500 */
+  background: #eef2ff;       /* Indigo-50 */
+  box-shadow: 0 2px 8px 0 rgba(99,102,241,0.06);
+}
+
+.icon-btn--small {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 1rem;
+  border-radius: 10px;
+  padding: 0;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -38,3 +89,4 @@
     transform: translateY(0);
   }
 }
+
