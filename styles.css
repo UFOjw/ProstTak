@@ -79,14 +79,10 @@
   padding: 0;
 }
 
-<<<<<<< HEAD
 .hide-on-mobile {
   display: none !important;
 }
 
-
-=======
->>>>>>> a29ce501d867ad1c6f5950e90b5cd2ac26468155
 @keyframes fadeIn {
   from {
     opacity: 0;
