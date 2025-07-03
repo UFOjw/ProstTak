@@ -65,13 +65,10 @@ const setLocal = (key, value) => localStorage.setItem(key, JSON.stringify(value)
 const removeClass = (el, cls) => el.classList.remove(cls);
 const addClass = (el, cls) => el.classList.add(cls);
 
-<<<<<<< HEAD
 function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
 }
 
-=======
->>>>>>> a29ce501d867ad1c6f5950e90b5cd2ac26468155
 // Получить дату в формате YYYY-MM-DD
 function getTodayDateStr() {
   return new Date().toISOString().slice(0, 10);
