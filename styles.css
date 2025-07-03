@@ -79,6 +79,11 @@
   padding: 0;
 }
 
+.hide-on-mobile {
+  display: none !important;
+}
+
+
 @keyframes fadeIn {
   from {
     opacity: 0;

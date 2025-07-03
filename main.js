@@ -65,6 +65,10 @@ const setLocal = (key, value) => localStorage.setItem(key, JSON.stringify(value)
 const removeClass = (el, cls) => el.classList.remove(cls);
 const addClass = (el, cls) => el.classList.add(cls);
 
+function isMobileDevice() {
+  return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+}
+
 // Получить дату в формате YYYY-MM-DD
 function getTodayDateStr() {
   return new Date().toISOString().slice(0, 10);
@@ -799,6 +803,10 @@ function init() {
       showCard();
   } else {
       finishSession();
+  }
+
+  if (isMobileDevice()) {
+    [layout2Btn, layout3Btn].forEach(btn => btn && btn.classList.add('hide-on-mobile'));
   }
 
   attachEventListeners();
