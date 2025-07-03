@@ -2,6 +2,7 @@
 const RECENT_THRESHOLD = 5 * 1000;
 const LAST_VIEW_KEY = "anki_last_viewed";
 const CARD_STORAGE_KEY = "anki_cards";
+const STATS_KEY = "anki_new_words_by_day";
 
 let cards = [];
 let currentIndex = 0;
@@ -10,6 +11,11 @@ let remembered = 0;
 let notRemembered = 0;
 let isDone = false;
 let showFirstMeaningOnly = false;
+let wordsPerPage = 100;          // Текущее число слов на странице
+let currentPage = 1;             // Текущая страница
+let settingsMode = 0;            // 0 — Display, 1 — Sorting, 2 — Page Size
+let sortType = 'used';           // 'used' или 'lastSeen'
+let sortOrder = 'desc';          // 'desc' или 'asc' (направление сортировки)
 
 // ===== DOM Элементы =====
 const loadBtn = document.getElementById("loadBtn");
@@ -58,6 +64,40 @@ const getLocal = (key, fallback = {}) => JSON.parse(localStorage.getItem(key) ||
 const setLocal = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 const removeClass = (el, cls) => el.classList.remove(cls);
 const addClass = (el, cls) => el.classList.add(cls);
+
+// Получить дату в формате YYYY-MM-DD
+function getTodayDateStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Получить список новых слов за сегодня
+function getTodaysNewWords() {
+  const stats = getLocal(STATS_KEY, {});
+  const today = getTodayDateStr();
+  return stats[today] || [];
+}
+
+// Добавить новое слово в статистику за сегодня
+function addNewWordToday(phrase) {
+  const stats = getLocal(STATS_KEY, {});
+  const today = getTodayDateStr();
+  if (!stats[today]) stats[today] = [];
+  if (!stats[today].includes(phrase)) {
+    stats[today].push(phrase);
+    setLocal(STATS_KEY, stats);
+  }
+}
+
+// Сбросить счётчик если день сменился
+function resetNewWordsIfDayChanged() {
+  const stats = getLocal(STATS_KEY, {});
+  const today = getTodayDateStr();
+  // Если день сменился — оставляем только сегодняшний ключ
+  const keys = Object.keys(stats);
+  if (keys.length > 0 && !keys.includes(today)) {
+    setLocal(STATS_KEY, { [today]: [] });
+  }
+}
 
 // ===== Работа с карточками =====
 
@@ -252,6 +292,29 @@ if (open) {
 
 function renderWordsList() {
   const allCards = getLocal(CARD_STORAGE_KEY, []);
+  const totalPages = Math.ceil(allCards.length / wordsPerPage);
+
+  if (sortType === 'used') {
+    allCards.sort((a, b) => {
+      const aUsed = (getLocal("anki_success_streak")[a.phrase] || 0) < 3 ? 1 : 0;
+      const bUsed = (getLocal("anki_success_streak")[b.phrase] || 0) < 3 ? 1 : 0;
+      return sortOrder === 'desc' ? bUsed - aUsed : aUsed - bUsed;
+    });
+  } else if (sortType === 'lastSeen') {
+    const lastViewed = getLocal(LAST_VIEW_KEY, {});
+    allCards.sort((a, b) => {
+      const aSeen = lastViewed[a.phrase] || 0;
+      const bSeen = lastViewed[b.phrase] || 0;
+      if (aSeen === 0 && bSeen === 0) return 0;
+      if (aSeen === 0) return sortOrder === 'desc' ? -1 : 1;
+      if (bSeen === 0) return sortOrder === 'desc' ? 1 : -1;
+      return sortOrder === 'desc' ? bSeen - aSeen : aSeen - bSeen;
+    });
+  }
+
+  const start = (currentPage - 1) * wordsPerPage;
+  const end = start + wordsPerPage;
+  const cardsToShow = allCards.slice(start, end);
   const lastViewed = getLocal(LAST_VIEW_KEY, {});
   const streaks = getLocal("anki_success_streak", {});
   let content = "";
@@ -267,7 +330,7 @@ function renderWordsList() {
       }
     };
     if (wordsListLayout === 1) {
-      content = allCards.map(card => {
+      content = cardsToShow.map(card => {
         const lastTime = lastViewed[card.phrase];
         const formatted = lastTime ? new Date(lastTime).toLocaleString() : "";
         const status = getStatus(card);
@@ -288,7 +351,7 @@ function renderWordsList() {
       // 2 or 3 columns
       const cols = wordsListLayout;
       content = `<div class=\"grid gap-3 ${cols === 2 ? 'grid-cols-2' : 'grid-cols-3'}\">` +
-        allCards.map(card => {
+        cardsToShow.map(card => {
           const lastTime = lastViewed[card.phrase];
           const formatted = lastTime ? new Date(lastTime).toLocaleString() : "";
           const status = getStatus(card);
@@ -308,26 +371,160 @@ function renderWordsList() {
     }
   }
   wordsListContent.innerHTML = content;
+  renderPagination(totalPages);
+}
+
+function renderSettingsPanel() {
+  const panel = document.getElementById("settingsPanel");
+  panel.innerHTML = '';
+  panel.className = "flex items-center justify-between relative w-full mb-4 min-h-[44px]";
+
+  // Левая стрелка
+  const leftWrap = document.createElement("div");
+  leftWrap.className = "flex-1 flex justify-start";
+  const left = document.createElement("button");
+  left.id = "settingsLeftArrow";
+  left.className = "arrow-btn";
+  left.innerHTML = `<svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>`;
+  left.onclick = () => switchSettingsMode(-1);
+  leftWrap.appendChild(left);
+
+  // Центр (absolute)
+  const center = document.createElement("div");
+  center.id = "settingsCenter";
+  center.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-2 justify-center";
+  if (settingsMode === 0) {
+    center.appendChild(layout1Btn);
+    center.appendChild(layout2Btn);
+    center.appendChild(layout3Btn);
+  } else if (settingsMode === 1) {
+    center.appendChild(createSortIconBtn('used'));
+    center.appendChild(createSortTimeIconBtn('lastSeen'));
+  }
+
+  // Правая стрелка
+  const rightWrap = document.createElement("div");
+  rightWrap.className = "flex-1 flex justify-end";
+  const right = document.createElement("button");
+  right.id = "settingsRightArrow";
+  right.className = "arrow-btn";
+  right.innerHTML = `<svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>`;
+  right.onclick = () => switchSettingsMode(1);
+  rightWrap.appendChild(right);
+
+  // Добавляем
+  panel.appendChild(leftWrap);
+  panel.appendChild(center);
+  panel.appendChild(rightWrap);
+}
+
+function createSortIconBtn(type) {
+  const btn = document.createElement('button');
+  let btnClass = 'icon-btn';
+  if (sortType === type) btnClass += ' active';
+  btn.className = btnClass;
+
+  if (type === 'used') {
+    const img = document.createElement('img');
+    // --- определяем нужную иконку по состоянию ---
+    let icon = '';
+    if (sortType === 'used') {
+      // Активное состояние
+      icon = sortOrder === 'desc'
+        ? 'icons/vis_up_active.png'
+        : 'icons/vis_down_active.png';
+    } else {
+      // Неактивное состояние
+      icon = sortOrder === 'desc'
+        ? 'icons/vis_up_inactive.png'
+        : 'icons/vis_down_inactive.png';
+    }
+    img.src = icon;
+    img.alt = 'Used';
+    img.className = 'w-6 h-6';
+    btn.appendChild(img);
+
+    btn.onclick = () => {
+      // Если кнопка уже активна — просто меняем порядок сортировки
+      if (sortType === 'used') {
+        sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+      } else {
+        // Если была неактивна — включаем сортировку used и порядок desc
+        sortType = 'used';
+        sortOrder = 'desc';
+      }
+      renderSettingsPanel();
+      renderWordsList();
+    };
+  }
+
+  return btn;
+}
+
+function createSortTimeIconBtn(type) {
+  const btn = document.createElement('button');
+  let btnClass = 'icon-btn';
+  if (sortType === type) btnClass += ' active';
+  btn.className = btnClass;
+
+  if (type === 'lastSeen') {
+    const img = document.createElement('img');
+    // --- определяем нужную иконку по состоянию ---
+    let icon = '';
+    if (sortType === 'lastSeen') {
+      // Активное состояние
+      icon = sortOrder === 'desc'
+        ? 'icons/time_down_active.png'
+        : 'icons/time_up_active.png';
+    } else {
+      // Неактивное состояние
+      icon = sortOrder === 'desc'
+        ? 'icons/time_down_inactive.png'
+        : 'icons/time_up_inactive.png';
+    }
+    img.src = icon;
+    img.alt = 'By Time';
+    img.className = 'w-6 h-6';
+    btn.appendChild(img);
+
+    btn.onclick = () => {
+      // Если кнопка уже активна — просто меняем порядок сортировки
+      if (sortType === 'lastSeen') {
+        sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+      } else {
+        // Если была неактивна — включаем сортировку lastSeen и порядок desc
+        sortType = 'lastSeen';
+        sortOrder = 'desc';
+      }
+      renderSettingsPanel();
+      renderWordsList();
+    };
+  }
+
+  return btn;
 }
 
 function setWordsListLayout(layout) {
   wordsListLayout = layout;
-  // Highlight active button with a border and shadow
   [layout1Btn, layout2Btn, layout3Btn].forEach((btn, idx) => {
     if (btn) {
-      if (idx + 1 === layout) {
-        btn.classList.add('ring-2', 'ring-indigo-500', 'border-indigo-600', 'bg-indigo-50', 'shadow');
-        btn.classList.remove('bg-gray-100', 'border-gray-300');
-      } else {
-        btn.classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-600', 'bg-indigo-50', 'shadow');
-        btn.classList.add('bg-gray-100', 'border-gray-300');
-      }
+      btn.classList.toggle('active', idx + 1 === layout);
     }
   });
   renderWordsList();
 }
 
+
+function switchSettingsMode(direction) {
+  // direction = -1 или 1
+  settingsMode += direction;
+  if (settingsMode < 0) settingsMode = 1; // Если будет 3 режима, пиши 2
+  if (settingsMode > 1) settingsMode = 0;
+  renderSettingsPanel();
+}
+
 function openWordsListModal() {
+  renderSettingsPanel();
   setWordsListLayout(wordsListLayout); // render and highlight
   wordsListModal.classList.remove("hidden");
 }
@@ -472,6 +669,45 @@ function attachEventListeners() {
     layout2Btn.addEventListener("click", () => setWordsListLayout(2));
     layout3Btn.addEventListener("click", () => setWordsListLayout(3));
   }
+
+  const settingsLeftArrow = document.getElementById("settingsLeftArrow");
+  const settingsRightArrow = document.getElementById("settingsRightArrow");
+
+  if (settingsLeftArrow) {
+    settingsLeftArrow.addEventListener("click", () => switchSettingsMode(-1));
+  }
+  if (settingsRightArrow) {
+    settingsRightArrow.addEventListener("click", () => switchSettingsMode(1));
+  }
+
+  const showStatsBtn = document.getElementById("showStatsBtn");
+  const statsModal = document.getElementById("statsModal");
+  const closeStatsBtn = document.getElementById("closeStatsBtn");
+  const statsContent = document.getElementById("statsContent");
+
+  if (showStatsBtn && statsModal && closeStatsBtn && statsContent) {
+    showStatsBtn.addEventListener("click", () => {
+      // Показываем статистику
+      const words = getTodaysNewWords();
+      statsContent.textContent = words.length > 0
+        ? `You learned ${words.length} new word${words.length === 1 ? '' : 's'} today!`
+        : "No new words today yet.";
+
+      // Можно вывести список новых слов:
+      // statsContent.innerHTML += words.length ? `<div class="mt-3">${words.map(w=>`<div>${w}</div>`).join("")}</div>` : "";
+
+      statsModal.classList.remove("hidden");
+    });
+    closeStatsBtn.addEventListener("click", () => {
+      statsModal.classList.add("hidden");
+    });
+    statsModal.addEventListener("click", (e) => {
+      if (e.target === statsModal) {
+        statsModal.classList.add("hidden");
+      }
+    });
+  }
+
 }
 
 function handleLoadCards() {
@@ -506,20 +742,25 @@ try {
 }
 
 function handleAnswer(isRemembered) {
-if (isDone || !currentCard) return;
-saveLastViewed(currentCard);
-saveStreak(currentCard, isRemembered);
+  if (isDone || !currentCard) return;
+  // Если впервые взаимодействие с этим словом (нет в lastViewed и нет в сегодняшних новых)
+  const lastViewed = getLocal(LAST_VIEW_KEY, {});
+  if (!lastViewed[currentCard.phrase] && !getTodaysNewWords().includes(currentCard.phrase)) {
+    addNewWordToday(currentCard.phrase);
+  }
+  saveLastViewed(currentCard);
+  saveStreak(currentCard, isRemembered);
 
-if (isRemembered) {
-    remembered++;
-    rememberedEl.textContent = remembered;
-} else {
-    notRemembered++;
-    notRememberedEl.textContent = notRemembered;
-}
+  if (isRemembered) {
+      remembered++;
+      rememberedEl.textContent = remembered;
+  } else {
+      notRemembered++;
+      notRememberedEl.textContent = notRemembered;
+  }
 
-closeSidebar();
-showCard();
+  closeSidebar();
+  showCard();
 }
 
 function resetProgress() {
@@ -538,28 +779,46 @@ setTimeout(() => location.reload(), 800);
 // ===== Инициализация =====
 
 function init() {
-const savedCards = getLocal(CARD_STORAGE_KEY, []);
-const lastViewed = getLocal(LAST_VIEW_KEY);
-const successStreak = getLocal("anki_success_streak");
-const now = Date.now();
+  resetNewWordsIfDayChanged();
+  const savedCards = getLocal(CARD_STORAGE_KEY, []);
+  const lastViewed = getLocal(LAST_VIEW_KEY);
+  const successStreak = getLocal("anki_success_streak");
+  const now = Date.now();
 
-cardArea.classList.remove("hidden");
+  cardArea.classList.remove("hidden");
 
-cards = savedCards.filter(card => {
-    const streak = successStreak[card.phrase] || 0;
-    if (streak >= 3) return false;
-    const lastTime = lastViewed[card.phrase];
-    const waitTime = 12 * 60 * 60 * 1000;
-    return !lastTime || now - lastTime > waitTime;
-});
+  cards = savedCards.filter(card => {
+      const streak = successStreak[card.phrase] || 0;
+      if (streak >= 3) return false;
+      const lastTime = lastViewed[card.phrase];
+      const waitTime = 12 * 60 * 60 * 1000;
+      return !lastTime || now - lastTime > waitTime;
+  });
 
-if (cards.length > 0) {
-    showCard();
-} else {
-    finishSession();
-}
+  if (cards.length > 0) {
+      showCard();
+  } else {
+      finishSession();
+  }
 
-attachEventListeners();
+  attachEventListeners();
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+function renderPagination(totalPages) {
+  const pagination = document.getElementById('pagination');
+  if (!pagination) return;
+  pagination.innerHTML = '';
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'icon-btn icon-btn--small' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    btn.style.margin = '0 2px';
+    btn.onclick = () => {
+      currentPage = i;
+      renderWordsList();
+    };
+    pagination.appendChild(btn);
+  }
+}
