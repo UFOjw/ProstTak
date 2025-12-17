@@ -83,6 +83,29 @@
   display: none !important;
 }
 
+/* Group badge */
+#groupBadge.active {
+  display: inline-block;
+  border-color: #a78bfa; /* purple-400 */
+  background: #f5f3ff;   /* purple-50  */
+  color: #6d28d9;        /* purple-700 */
+}
+
+.group-name { cursor: text; }
+.group-edit { width: 14rem; }
+
+/* Строка группы: вертикальное выравнивание */
+.group-item { align-items: center; }
+
+/* Курсор-подсказка: имя редактируемо */
+.group-name { cursor: text; }
+
+/* Чуть ограничим ширину инпута (уже есть max-w через Tailwind, но на всякий) */
+.name-wrap .group-edit { max-width: 100%; }
+
+/* Чтобы красная "Delete" не наезжала на закругления контейнера при узких ширинах */
+.group-item > .flex-shrink-0 > button { white-space: nowrap; }
+
 @keyframes fadeIn {
   from {
     opacity: 0;

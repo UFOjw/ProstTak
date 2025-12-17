@@ -55,7 +55,12 @@
 
     <!-- Card Display Area -->
     <div id="cardArea" class="mt-10 hidden">
-      <h2 class="text-xl font-semibold mb-4">Anki-Like Single Card</h2>
+      <h2 class="text-xl font-semibold mb-1">Anki-Like Single Card</h2>
+      <div class="mb-3">
+        <span id="groupBadge" class="inline-block text-xs px-2 py-1 rounded border hidden">
+          Group: —
+        </span>
+      </div>
       <div class="bg-white shadow rounded-lg p-6 flex flex-col items-center justify-center min-h-[150px]">
         <p id="cardPhrase" class="text-lg font-bold text-center">Loading...</p>
         <button id="showDetailsBtn"
@@ -118,6 +123,10 @@
                      transition">
         📚 Show All Words
       </button>
+      <button id="openGroupsBtn"
+              class="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 px-4 rounded shadow transition">
+        🧩 Groups
+      </button>
       <button id="optionsBtn"
               class="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded shadow transition">
         ⚙️ Options
@@ -133,19 +142,51 @@
   <div id="optionsModal"
       class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
     <div class="bg-white p-6 rounded shadow-xl w-[90%] max-w-md relative">
-      <!-- крестик -->
-      <button id="closeOptionsBtn" class="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none">
+      <button id="closeOptionsBtn"
+              class="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl leading-none">
         &times;
       </button>
-      <h2 class="text-lg font-bold mb-6">Options</h2>
 
-      <!-- переключатель просмотра -->
-      <div class="flex items-center justify-between mb-4">
-        <span class="font-medium text-gray-800">Show first meaning</span>
-        <label class="inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="viewToggle" class="sr-only">
-          <span id="viewToggleLabel" class="ml-3 text-sm font-medium text-gray-900">OFF</span>
-        </label>
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+        ⚙️ Options
+      </h2>
+
+      <div class="space-y-5 text-sm text-gray-800">
+        <!-- Show first meaning -->
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium">Show first meaning</p>
+            <p class="text-xs text-gray-500">Display only the first translation if multiple exist.</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="viewToggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-500 
+                        after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border after:rounded-full 
+                        after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+            </div>
+          </label>
+        </div>
+
+        <!-- Answer speed -->
+        <div>
+          <p class="font-medium mb-1">⏳ Answer speed</p>
+          <div class="flex gap-2">
+            <button data-speed="off"
+                    class="speed-btn bg-gray-200 text-gray-800 px-3 py-1 rounded text-xs font-medium active:bg-indigo-600 active:text-white">
+              Off
+            </button>
+            <button data-speed="30"
+                    class="speed-btn bg-gray-200 text-gray-800 px-3 py-1 rounded text-xs font-medium">
+              30s
+            </button>
+            <button data-speed="60"
+                    class="speed-btn bg-gray-200 text-gray-800 px-3 py-1 rounded text-xs font-medium">
+              60s
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Set a timer per word (auto-skip after time ends).</p>
+        </div>
       </div>
     </div>
   </div>
@@ -181,7 +222,12 @@
           </svg>
         </button>
       </div>
-      <div id="wordsListContent" class="max-h-[60vh] overflow-y-auto space-y-2 text-sm transition-all duration-300"></div>
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="Search words..."
+        class="w-full border border-gray-300 rounded px-3 py-2 mb-3 text-sm"
+      />
       <div id="wordsListContent" class="max-h-[60vh] overflow-y-auto space-y-2 text-sm transition-all duration-300"></div>
       <div id="pagination" class="flex justify-center gap-2 mt-2"></div>
     </div>
@@ -194,14 +240,81 @@
   <div id="statsModal"
       class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
     <div class="bg-white p-6 rounded shadow-xl w-[90%] max-w-md relative">
-      <button id="closeStatsBtn" class="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none">
+      <button id="closeStatsBtn"
+              class="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none">
         &times;
       </button>
-      <h2 class="text-lg font-bold mb-4">Today's New Words</h2>
-      <div id="statsContent" class="text-xl text-center text-gray-700">Loading...</div>
+      <div class="flex items-center gap-2 mb-4">
+        <span class="text-2xl">📊</span>
+        <h2 class="text-lg font-bold">Today's Progress</h2>
+      </div>
+      <div id="statsContent" class="text-sm text-gray-700 space-y-3">
+        <div class="border-b pb-2">
+          <p class="font-medium">📘 New words learned:</p>
+          <p id="statNewWords" class="text-indigo-700 font-semibold text-base"></p>
+        </div>
+        <div class="border-b pb-2">
+          <p class="font-medium">🔁 Cards reviewed:</p>
+          <p id="statReviewed" class="text-emerald-700 font-semibold text-base"></p>
+        </div>
+        <div class="border-b pb-2">
+          <p class="font-medium">🧠 Remember rate:</p>
+          <p id="statRememberRate" class="text-sky-700 font-semibold text-base"></p>
+        </div>
+        <div class="border-b pb-2">
+          <p class="font-medium">⏳ Streak progress:</p>
+          <p id="statMastered" class="text-purple-700 font-semibold text-base"></p>
+        </div>
+        <div>
+          <p class="font-medium">🗂️ Total cards in library:</p>
+          <p id="statTotal" class="text-gray-800 font-semibold text-base"></p>
+        </div>
+        <p class="text-xs text-gray-500 pt-2 border-t mt-2">Stats reset automatically every day</p>
+      </div>
     </div>
   </div>
 
-  <script src="main.js" defer></script>
+  <!-- Groups Modal -->
+  <div id="groupsModal"
+      class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-6 rounded shadow-xl w-[90%] max-w-md relative">
+      <button id="closeGroupsBtn" class="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none">
+        &times;
+      </button>
+      <h2 class="text-lg font-bold mb-4">Groups</h2>
+
+      <div class="flex gap-2 mb-4">
+        <input id="newGroupName" type="text" placeholder="Name of a group"
+              class="flex-1 border rounded px-3 py-2 text-sm" />
+        <button id="createGroupBtn"
+                class="bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold py-2 px-4 rounded shadow">
+          ➕ Create
+        </button>
+      </div>
+
+      <div id="groupsList" class="space-y-2 text-sm">
+        <!-- Рендерится из JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add to Group Modal -->
+  <div id="addToGroupModal"
+      class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-6 rounded shadow-xl w-[90%] max-w-sm relative">
+      <button id="closeAddToGroupBtn"
+              class="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none">
+        &times;
+      </button>
+      <h2 class="text-lg font-bold mb-4">Add to Group</h2>
+      <p id="addToGroupWord" class="text-sm mb-4 text-gray-700"></p>
+      <div id="addToGroupList" class="space-y-2 text-sm">
+        <!-- Список групп подставляется из JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
 </body>
 </html>
+
