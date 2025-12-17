@@ -1,67 +1,48 @@
 # Anki Trainer
 
-A lightweight, browser-based flashcard trainer inspired by Anki. It allows you to load custom card decks in JSON format, practice remembering phrases and their meanings, and import/export your data.
+Lightweight, browser-based flashcard trainer inspired by Anki. Everything runs in the browser (Tailwind CDN, no build step) and saves to `localStorage`.
 
 ## Features
 
-* **Add Cards:** Paste a JSON array of cards to build your deck.
-* **Spaced Repetition:** Cards repeat with a 12-hour interval and up to 3 successful recalls before they retire.
-* **Learning Modes:** Toggle between showing the original phrase or its first meaning.
-* **Progress Tracking:** View counts of remembered vs. not remembered and session progress.
-* **Details Sidebar:** View card metadata including level, frequency, examples, translations, and synonyms.
-* **Word List & Menu:** Browse all cards and reset training or adjust options.
-* **Data Persistence:** Stores cards, recall streaks, and last-view timestamps in localStorage.
-* **Import/Export:** Backup and restore your entire training data as JSON.
-
-## Demo
-
-GIF demo placeholder.
+- **Card input & backups:** Paste a JSON array to add cards. Export/import the entire localStorage backup, plus per-group JSON export/import.
+- **Training modes:** Default spaced repetition (12h wait, 3 correct recalls to retire). Group drills ignore streaks/waits and show every word in the selected group once.
+- **Answer experience:** Toggle “Show first meaning”, optional 30s/60s answer timer, details sidebar with level/frequency/examples/synonyms.
+- **Word library:** Search, paginate (100/page), sort by active status or last seen (asc/desc), switch 1/2/3-column layouts, mark words active/inactive, add words to groups.
+- **Groups management:** Create/rename/delete groups, add words manually or from the word list, import/export a single group, start a group drill (URL hash persists mode).
+- **Daily statistics:** Modal shows today’s new words, reviewed count, remember rate, mastered count (streak ≥3), and total cards.
 
 ## Installation
 
-1. Clone or download this repository to your Nginx web root directory.
-2. Configure your Nginx server block. For example:
+No build is required. Any static hosting works:
+
+1) Download or clone the repo.  
+2) Open `index.html` directly, or serve the folder with any static server (Nginx/Apache/VS Code Live Server/etc.).  
+3) Visit the page in your browser.
+
+Example Nginx server block:
 
 ```nginx
 server {
     listen 8080;
     server_name localhost;
-
-    root   your_root;
+    root   /path/to/anki-cards-live;
     index  index.html;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
 }
 ```
 
-3. Reload or restart Nginx:
-
-```bash
-sudo nginx -s reload
-```
-
-4. Open your browser and navigate to `http://localhost:8080` to access the Anki Trainer.
-
 ## Usage
 
-1. Open `index.html` in your browser (or via local server).
-2. Click **Show Add Cards Form** and paste your JSON card data.
-3. Click **Load Cards** to start your session.
-4. Use **I Remember** / **I Don't Remember** to record your answers.
-5. Click **Show Details** to open the sidebar with additional card information.
-6. Open the **Menu** to:
+1. **Load cards:** Click **Show Add Cards Form**, paste your JSON array, then **Load Cards** (duplicates are skipped).
+2. **Train:** Use **I Remember** / **I Don't Remember**. **Show Details** opens the sidebar. Spaced repetition waits 12h and retires after 3 correct answers.
+3. **Options:** In **Menu → Options**, toggle “Show first meaning” and set answer speed (Off/30s/60s). Timer auto-skips as “Don’t remember”.
+4. **Words list:** **Menu → Show All Words** to search, sort (active/last seen, asc/desc), change layout (1/2/3 columns), paginate, mark active/inactive, or add to a group.
+5. **Groups:** **Menu → Groups** to create/rename/delete, start a group drill, import/export a group, or add words manually. Exit a drill via the group badge.
+6. **Backups:** Use **Export** / **Import** under the add-cards form to backup/restore all stored data. Group-level import/export is inside **Groups → Manage**.
+7. **Stats:** **Menu → Statistics** shows today’s counts and remember rate; stats reset daily.
 
-   * Reset training progress
-   * View the full word list
-   * Adjust settings in **Options**
-   * Use **Export** to download a JSON backup of your localStorage
-   * Use **Import** to restore from a previously saved JSON file
+## JSON card format
 
-## JSON Card Data Format
-
-Cards should be provided as a JSON array, where each card object has the following shape:
+Provide an array of objects; only `phrase` is required. The app accepts either `meaning` (string) or `meanings` (array) plus optional metadata used in the sidebar.
 
 ```json
 [
@@ -70,35 +51,24 @@ Cards should be provided as a JSON array, where each card object has the followi
     "meanings": ["познакомить", "ознакомить", "ввести в курс"],
     "examples": ["Let me acquaint you with our process..."],
     "exampleTranslations": ["Позвольте познакомить вас с нашим процессом..."],
-    "synonyms": ["introduce"]
+    "synonyms": ["introduce"],
+    "level": 7,
+    "frequency": 5
   }
 ]
 ```
 
-### Field Descriptions
+- `phrase` (string, required): the prompt text.
+- `meaning` (string) or `meanings` (array): translations/definitions.
+- `examples` / `exampleTranslations` (arrays, optional).
+- `synonyms` (array, optional).
+- `level` and `frequency` (numbers 0–10, optional): shown as progress bars in the sidebar.
 
-* **phrase** (string): the term or word in your native language.
-* **meanings** (array): list of possible translations or definitions.
-* **examples** (array, optional): example sentences.
-* **exampleTranslations** (array, optional): translations of examples.
-* **synonyms** (array, optional): related words.
+## Behavior notes
 
-## Configuration
-
-* **Spaced Interval:** Fixed at 12 hours before a card reappears.
-* **Max Recall Attempts:** 3 successful recalls retire a card.
-* **View Mode:** Toggle "Show first meaning" in **Options**.
-
-To customize behavior, modify constants in `main.js`:
-
-```javascript
-const WAIT_TIME = 12 * 60 * 60 * 1000; // interval between reviews
-const MAX_STREAK = 3;                  // number of successful recalls
-```
-
-## Contributing
-
-Contributions and suggestions are welcome. Please fork the repository and open a pull request.
+- Local data keys include cards, streaks, last-seen times, daily stats, settings, and group metadata; everything is stored in `localStorage` of the current browser.
+- Group drills ignore wait times and streaks so you can review a whole group in one go.
+- Marking a word as inactive (Used/Unused toggle) removes it from training until reactivated.
 
 ## License
 
